@@ -1,0 +1,89 @@
+#!/bin/sh
+
+# Gearman Worker service as daemon
+# Author Biswajit Mondal
+# Contact bisw271923@gmail.com
+
+### BEGIN INIT INFO
+# Provides:          gearman-worker
+# Required-Start:    $network $remote_fs $syslog
+# Required-Stop:     $network $remote_fs $syslog
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: Start daemon at boot time
+# Description:       Run multiple gearman worker parallaly
+### END INIT INFO
+
+
+# Fill in name of php daemon file and run as System Daemon /
+PROG="worker.php"
+PROG_PATH="/var/www/html/gearman"
+PROG_ARGS=""
+PID_PATH="/var/run"
+FA_WORKERS=10
+
+## If not already running start php daemon
+start() {
+
+  if [ -e "$PID_PATH/php $PROG.pid" ];
+    then
+      ## Program is running, exit with error.
+      echo "Error! $PROG is currently running!" 1>&2
+      exit 1
+  else
+    ## Change from /dev/null to something like /var/log/$PROG if you want to save output.
+
+    # cd $PROG_PATH
+    # in case sh script
+    # for ((j = 0; j < $FA_CLIENTS; j++))
+    for j in $(seq 1 $FA_WORKERS)
+      do
+        php $PROG_PATH/$PROG &
+
+        echo "php $PROG_PATH/$PROG started as system service"
+        touch "$PID_PATH/php $PROG.pid"
+      done
+  fi
+}
+
+## If runinng kill php daemon
+stop() {
+
+  if [ -e "$PID_PATH/php $PROG.pid" ];
+    then
+      ## Program is running, so stop it
+
+      kill $(ps aux | grep "php $PROG_PATH/$PROG" | awk '{print $2}')
+      rm "$PID_PATH/php $PROG.pid"
+      echo "System service $PROG stopped"
+
+  else
+    ## Program is not running as system service, exit with error.
+    echo "Error! $PROG not started!" 1>&2
+    exit 1
+  fi
+}
+
+
+case "$1" in
+    start)
+      start
+      exit 0
+      ;;
+
+    stop)
+      stop
+      exit 0
+      ;;
+
+    reload|restart|force-reload)
+      stop
+      start
+      exit 0
+      ;;
+
+    **)
+      echo "Usage: $0 {start|stop|reload}" 1>&2
+      exit 1
+      ;;
+esac
