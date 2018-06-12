@@ -20,7 +20,7 @@ PROG="client.php"
 PROG_PATH="/var/www/html/gearman"
 PROG_ARGS=""
 PID_PATH="/var/run"
-FA_CLIENTS=3
+FA_CLIENTS=10
 
 ## If not already running start php daemon
 start() {
